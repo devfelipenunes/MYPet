@@ -1,33 +1,59 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ButtonBack } from "@components/ButtonBack";
-import { EconomyFuturePurchases } from "@components/EconomyFuturePurchases";
-import { Box, VStack, Text, SectionList } from "native-base";
+import { Box, VStack, Text, SectionList, FlatList } from "native-base";
 import { ButtonAdd } from "@components/ButtonAdd";
-import { EconomyPurchases } from "@components/EconomyPurchases";
+import { TransactionCard, TransactionCardProps } from "@components/EconomyCard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import "intl";
+import "intl/locale-data/jsonp/pt-BR";
+import { useFocusEffect } from "@react-navigation/native";
+export interface DataListProps extends TransactionCardProps {
+  id: string;
+}
 
 export function Economy({ navigation }: any) {
-  const [exercises, setExercises] = useState([
-    {
-      title: "26.08.22",
-      data: ["puxada", "remada"],
-    },
-    {
-      title: "26.08.22",
-      data: ["puxada", "remada"],
-    },
-    {
-      title: "26.08.22",
-      data: ["puxada", "remada"],
-    },
-    {
-      title: "26.08.22",
-      data: ["puxada", "remada"],
-    },
-    {
-      title: "26.08.22",
-      data: ["puxada", "remada"],
-    },
-  ]);
+  const [data, setData] = useState<DataListProps[]>([]);
+  const [dataCompra, setDataCompra] = useState<DataListProps[]>([]);
+  const [dataComprar, setDataComprar] = useState<DataListProps[]>([]);
+
+  async function loadTransactions() {
+    const dataKey = "@MYPets:transactions";
+    const response = await AsyncStorage.getItem(dataKey);
+    const transactions = response ? JSON.parse(response) : [];
+
+    const transactionsFormatted: DataListProps[] = transactions.map(
+      (item: DataListProps) => {
+        const amount = Number(item.amount).toLocaleString("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+        });
+
+        // const date = Intl.DateTimeFormat("pt-BR", {
+        //   day: "2-digit",
+        //   month: "2-digit",
+        //   year: "2-digit",
+        // }).format(new Date(item.date));
+
+        return {
+          id: item.id,
+          name: item.name,
+          amount,
+          // type: item.type,
+          type: item.type,
+
+          category: item.category,
+          // date,
+        };
+      }
+    );
+
+    setData(transactionsFormatted);
+  }
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
 
   function handleBack() {
     navigation.goBack();
@@ -54,6 +80,12 @@ export function Economy({ navigation }: any) {
     };
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      loadTransactions();
+    }, [])
+  );
+
   return (
     <VStack flex={1}>
       <Box h={250} bg="blue.700" pt={5} mb={3}>
@@ -66,49 +98,22 @@ export function Economy({ navigation }: any) {
         </VStack>
       </Box>
       <Box w={360} h={90} bg="blue.600" alignSelf="center"></Box>
-      <SectionList
-        mt={2}
-        sections={exercises}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => <EconomyFuturePurchases />}
-        bg="yellow.400"
-        maxH={180}
-        horizontal
-        contentContainerStyle={
-          [].length && {
-            flex: 1,
-            justifyContent: "center",
-          }
-        }
-        ListEmptyComponent={() => (
-          <Text color="gray.100" textAlign="center">
-            Não há exercícios registrados ainda.{"/n"}Vamos fazer exercicio hoje
-            ?
-          </Text>
-        )}
-        showsHorizontalScrollIndicator={false}
-      />
-      <SectionList
-        mt={2}
-        sections={exercises}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => <EconomyPurchases />}
-        bg="yellow.400"
-        maxH={200}
-        contentContainerStyle={
-          [].length && {
-            flex: 1,
-            justifyContent: "center",
-          }
-        }
-        ListEmptyComponent={() => (
-          <Text color="gray.100" textAlign="center">
-            Não há exercícios registrados ainda.{"/n"}Vamos fazer exercicio hoje
-            ?
-          </Text>
-        )}
-        showsHorizontalScrollIndicator={false}
-      />
+      <Box h={200} w={"full"} p={2} m={1} bg="yellow.200" alignSelf="center">
+        <FlatList<DataListProps>
+          horizontal
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <TransactionCard data={item} />}
+        />
+      </Box>
+      <Box h={200} w={"full"} p={2} m={1} bg="yellow.200" alignSelf="center">
+        <FlatList<DataListProps>
+          data={data}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <TransactionCard data={item} />}
+        />
+      </Box>
+
       <ButtonAdd onPress={handleAddEconomy} />
     </VStack>
   );

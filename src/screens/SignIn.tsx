@@ -1,38 +1,28 @@
 import { Box, Button, Input, VStack } from "native-base";
-import React, { useState } from "react";
-import { Text } from "react-native";
+import React, { useState, useContext } from "react";
+import { Text, Alert } from "react-native";
 
-// import {
-//   getAuth,
-//   createUserWithEmailAndPassword,
-//   signInWithEmailAndPassword,
-// } from "firebase/auth";
-
-import auth from "@react-native-firebase/auth";
-
-import { initializeApp } from "firebase/app";
-import { firebaseConfig } from "firabase-config";
+import { useAuth } from "@hooks/auth";
 
 export function SignIn() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { signInWithGoogle } = useAuth();
 
-  const handleSignIn = () => {
-    auth()
-      .createUserWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        console.log("user: ", userCredential);
-      });
-    // signInWithEmailAndPassword(auth, email, password).then();
-  };
+  async function handleSignInWithGoogle() {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Não foi possível conectar a conta google");
+    }
+  }
 
   return (
     <VStack flex={1}>
       <Box bg="yellow.700" h={400}></Box>
       <VStack p={10}>
-        <Input placeholder="E-mail" mb={5} onChangeText={setEmail} />
-        <Input placeholder="Senha" mb={5} onChangeText={setPassword} />
-        <Button>
+        <Input placeholder="E-mail" mb={5} />
+        <Input placeholder="Senha" mb={5} />
+        <Button onPress={handleSignInWithGoogle}>
           <Text>Login</Text>
         </Button>
       </VStack>
